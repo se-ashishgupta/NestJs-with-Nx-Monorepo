@@ -23,10 +23,10 @@ export class Auth {
   password!: string;
 
   @Column({ type: 'boolean', default: true })
-  isActive: boolean = true;
+  isActive!: boolean;
 
   @Column({ type: 'boolean', default: false })
-  isDeleted: boolean = false;
+  isDeleted!: boolean;
 
   @Column({ type: 'boolean', default: false })
   isVerified!: boolean;
