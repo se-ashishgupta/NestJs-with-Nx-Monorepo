@@ -1,0 +1,26 @@
+{
+  "name": "@caudateai-server/basic-auth-typeorm-postgres-e2e",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "implicitDependencies": [
+      "@caudateai-server/basic-auth-typeorm-postgres"
+    ],
+    "targets": {
+      "e2e": {
+        "executor": "@nx/jest:jest",
+        "outputs": [
+          "{projectRoot}/test-output/jest/coverage"
+        ],
+        "options": {
+          "jestConfig": "apps/basic-auth-typeorm-postgres-e2e/jest.config.ts",
+          "passWithNoTests": true
+        },
+        "dependsOn": [
+          "@caudateai-server/basic-auth-typeorm-postgres:build",
+          "@caudateai-server/basic-auth-typeorm-postgres:serve"
+        ]
+      }
+    }
+  }
+}
