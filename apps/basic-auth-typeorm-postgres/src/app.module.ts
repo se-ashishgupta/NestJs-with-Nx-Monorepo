@@ -9,12 +9,22 @@ import { AppController } from '@/app.controller';
 import { AppService } from '@/app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { Auth } from '@/modules/auth/auth.entity';
+import { User } from '@/modules/auth/auth.entity';
 import { LoggerMiddleware } from '@/common/middleware/logger.middleware';
-import { UserModule } from '@/modules/user/user.module';
+import { ProfileModule } from '@/modules/profile/profile.module';
+import { Profile } from '@/modules/profile/profile.entity';
+import configuration from '@/config/configuration';
+import { ConfigModule } from '@nestjs/config';
+import { validateEnv } from '@/env.validation';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      envFilePath: ['.development.env', '.production.env'],
+      load: [configuration],
+      isGlobal: true,
+      validate: validateEnv,
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: 'localhost',
@@ -22,12 +32,13 @@ import { UserModule } from '@/modules/user/user.module';
       username: 'postgres',
       password: 'root',
       database: 'nestjs',
-      entities: [Auth],
+      entities: [User, Profile],
       synchronize: true,
     }),
     AuthModule,
-    UserModule,
+    ProfileModule,
   ],
+
   controllers: [AppController],
   providers: [AppService],
 })

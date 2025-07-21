@@ -1,0 +1,57 @@
+model User {
+    id           String @id @default(cuid())
+    userName     String @unique @db.VarChar(50)
+    email        String @unique @db.VarChar(255)
+    passwordHash String @db.VarChar(255)
+
+    isActive      Boolean @default(true)
+    emailVerified Boolean @default(false)
+
+    role Role     @default(USER)
+    type UserType @default(FREE)
+
+    // Token Management
+    totalTokens     Int       @default(0) // Total tokens available
+    usedTokens      Int       @default(0) // Tokens used so far
+    availableTokens Int       @default(0) // Remaining tokens
+    lastTokenReset  DateTime? // When tokens were last reset (for monthly allocations)
+
+    // Other Details 
+    userDetails    UserDetails?
+    organizationId String?
+    organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    // Security fields
+    failedLoginAttempts Int       @default(0)
+    lastFailedLogin     DateTime?
+    isLocked            Boolean   @default(false)
+    lockUntil           DateTime?
+
+    // Password reset fields 
+    passwordResetToken   String?   @db.VarChar(255)
+    passwordResetExpires DateTime?
+
+    // Time Stamp 
+    lastLoginAt DateTime?
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+
+    @@index([email, userName])
+    @@index([isActive, emailVerified])
+    @@index([lastLoginAt])
+    @@map("users")
+}
+
+enum Role {
+    USER
+    ADMIN
+    MODERATOR
+    ORG_HEAD
+    EMPLOYEE
+}
+
+enum UserType {
+    FREE
+    PRO
+    ENTERPRISE
+}

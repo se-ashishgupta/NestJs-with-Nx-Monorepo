@@ -1,4 +1,12 @@
-import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { Profile } from '@/modules/profile/profile.entity';
+import {
+  Column,
+  Entity,
+  DeleteDateColumn,
+  OneToOne,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
 
 export enum UserRole {
   USER = 'user',
@@ -6,8 +14,8 @@ export enum UserRole {
   MODERATOR = 'moderator',
 }
 
-@Entity('auth')
-export class Auth {
+@Entity('user')
+export class User {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
@@ -23,10 +31,10 @@ export class Auth {
   password!: string;
 
   @Column({ type: 'boolean', default: true })
-  isActive!: boolean;
+  isActive: boolean = true;
 
   @Column({ type: 'boolean', default: false })
-  isDeleted!: boolean;
+  isDeleted: boolean = false;
 
   @Column({ type: 'boolean', default: false })
   isVerified!: boolean;
@@ -38,6 +46,9 @@ export class Auth {
   })
   role!: UserRole;
 
+  @OneToOne(() => Profile, (profile) => profile.user)
+  profile!: Profile;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt!: Date;
 
@@ -48,6 +59,6 @@ export class Auth {
   })
   updatedAt!: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
   deletedAt!: Date;
 }

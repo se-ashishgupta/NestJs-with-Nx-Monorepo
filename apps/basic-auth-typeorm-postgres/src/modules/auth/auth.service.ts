@@ -1,9 +1,15 @@
 import { LoginDto } from '@/modules/auth/dto/login.dto';
-import { Auth } from '@/modules/auth/auth.entity';
-import { Injectable } from '@nestjs/common';
+import { User } from '@/modules/auth/auth.entity';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RegisterDto } from '@/modules/auth/dto/register.dto';
+import * as bcrypt from 'bcryptjs';
+import { JwtService } from '@nestjs/jwt';
 
 // @Injectable({ scope: Scope.TRANSIENT }) // scope default is transient means new instance for each request
 // @Injectable({ scope: Scope.REQUEST }) // scope default is request means new instance for each request
@@ -11,37 +17,140 @@ import { RegisterDto } from '@/modules/auth/dto/register.dto';
 @Injectable() // scope default is singleton
 export class AuthService {
   constructor(
-    @InjectRepository(Auth)
-    private authRepository: Repository<Auth>
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+    private jwtService: JwtService
   ) {}
 
-  register(registerDto: RegisterDto): Promise<Auth> {
-    // Option 1
-    // return this.authRepository.save(registerDto);
+  async register(registerDto: RegisterDto): Promise<User> {
+    let user = await this.userRepository.findOne({
+      where: { email: registerDto.email },
+    });
 
-    // Option 2
-    // const user = this.authRepository.create(registerDto);
-    // return this.authRepository.save(user);
+    if (user) {
+      throw new BadRequestException(
+        'Email already exists, please try a different email'
+      );
+    }
 
-    // Option 3
-    const user = new Auth();
+    user = await this.userRepository.findOne({
+      where: { userName: registerDto.userName },
+    });
 
-    user.email = registerDto.email;
-    user.userName = registerDto.userName;
-    user.password = registerDto.password;
-    user.role = registerDto.role;
+    if (user) {
+      throw new BadRequestException(
+        'User Name already exists, please try a different user name'
+      );
+    }
 
-    return this.authRepository.save(user);
+    const salt = await bcrypt.genSalt();
+    registerDto.password = await bcrypt.hash(registerDto.password, salt);
+
+    const newUser = this.userRepository.create(registerDto);
+    const savedUser = await this.userRepository.save(newUser);
+
+    return savedUser;
   }
 
-  login(loginDto: LoginDto) {
-    // throw new Error('Not implemented yet');
+  async login(loginDto: LoginDto): Promise<{ user: User; token: string }> {
+    let user = await this.userRepository.findOne({
+      where: { email: loginDto.email },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found, please register first');
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.password
+    );
+
+    if (!isPasswordValid) {
+      throw new BadRequestException('Invalid password, please try again');
+    }
+
+    const payload = { userId: user.id, email: user.email };
+    const token = await this.jwtService.signAsync(payload);
+
     return {
-      message: 'Login successful',
-      data: {
-        email: loginDto.email,
-        password: loginDto.password,
-      },
+      user,
+      token,
     };
+  }
+
+  async getUserById(userId: string): Promise<User | null> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: {
+        id: true,
+        userName: true,
+        email: true,
+        role: true,
+        profile: true,
+      },
+      relations: ['profile'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
+  async getUserByUserName(userName: string): Promise<User | null> {
+    const user = await this.userRepository.findOne({
+      where: { userName },
+      select: {
+        id: true,
+        userName: true,
+        email: true,
+        role: true,
+        profile: true,
+      },
+      relations: ['profile'],
+    });
+
+    if (user) {
+      throw new BadRequestException('User already exists');
+    }
+
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | null> {
+    const user = await this.userRepository.findOne({
+      where: { email },
+      select: {
+        id: true,
+        userName: true,
+        email: true,
+        role: true,
+        profile: true,
+      },
+      relations: ['profile'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    const users = await this.userRepository.find({
+      select: {
+        id: true,
+        userName: true,
+        email: true,
+        role: true,
+        profile: true,
+      },
+      relations: ['profile'],
+    });
+
+    return users;
   }
 }

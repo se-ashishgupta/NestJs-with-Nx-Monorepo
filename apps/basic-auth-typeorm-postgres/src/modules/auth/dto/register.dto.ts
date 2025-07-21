@@ -19,7 +19,7 @@ export class RegisterDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(8)
-  readonly password!: string;
+  password!: string;
 
   @IsString()
   @IsNotEmpty()

@@ -1,0 +1,30 @@
+model UserDetails {
+    id String @id @default(cuid())
+
+    userId String @unique
+    user   User   @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+
+    firstName String? @db.VarChar(50)
+    lastName  String? @db.VarChar(50)
+    company   String? @db.VarChar(100)
+    level     String? @db.VarChar(50)
+
+    // Additional profile fields
+    avatarUrl   String? @db.VarChar(255)
+    bio         String? @db.Text
+    location    String? @db.VarChar(100)
+    timezone    String? @db.VarChar(50)
+    preferences Json? // Store user preferences
+
+    // Social profiles
+    githubUrl   String? @db.VarChar(255)
+    linkedinUrl String? @db.VarChar(255)
+    twitterUrl  String? @db.VarChar(255)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([userId])
+    @@index([company, level])
+    @@map("user_details")
+}

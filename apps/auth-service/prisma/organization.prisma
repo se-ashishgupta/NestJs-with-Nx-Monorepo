@@ -1,0 +1,37 @@
+model Organization {
+    id          String           @id @default(cuid())
+    name        String           @db.VarChar(100)
+    websiteUrl  String?          @db.VarChar(255)
+    description String?          @db.Text
+    email       String?          @db.VarChar(255)
+    address     String?          @db.VarChar(255)
+    phone       String?          @db.VarChar(20)
+    type        OrganizationType @default(COMPANY)
+
+    // Token Pool Management
+    totalTokens     Int      @default(0)
+    usedTokens      Int      @default(0)
+    availableTokens Int      @default(0)
+    lastUpdated     DateTime @default(now())
+
+    // Additional tracking fields
+    isActive     Boolean @default(true)
+    maxUsers     Int     @default(1)
+    currentUsers Int     @default(0)
+
+    Users User[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([email, name])
+    @@index([type, isActive])
+    @@index([currentUsers])
+    @@map("organizations")
+}
+
+enum OrganizationType {
+    COMPANY
+    NON_PROFIT
+    GOVERNMENT
+}
